@@ -4,43 +4,27 @@ Ce projet met en pratique les techniques avancées d'interrogation de bases de d
 
 ---
 
-## 1. Fonctionnalités Clés Implémentées
+## 1. Implémentation du Code et Requêtes JPQL / Criteria
 
-### 1. Recherche de Salles Disponibles par Créneau (JPQL avec paramètres temporels)
-Détection dynamique des conflits d'horaires à l'aide d'une sous-requête de chevauchement :
-```sql
-SELECT s FROM SalleReunion s 
-WHERE s.id NOT IN (
-    SELECT r.salleReservee.id FROM ReservationCreneau r 
-    WHERE r.debut < :creneauFin AND r.fin > :creneauDebut
-)
-```
+Voici les extraits du code démontrant le filtrage des disponibilités et l'API Criteria dynamique :
 
-### 2. Recherche Multi-critères Dynamique (JPA Criteria API)
-Construction programmatique et type-safe de prédicats modulaires (`capaciteMin`, `etage`, `visioDisponible`) :
-```java
-CriteriaBuilder cb = em.getCriteriaBuilder();
-CriteriaQuery<SalleReunion> cq = cb.createQuery(SalleReunion.class);
-Root<SalleReunion> root = cq.from(SalleReunion.class);
+![Code Requetes Avancées](docs/images/01-requetes-avancees.png)
 
-List<Predicate> predicats = new ArrayList<>();
-if (capaciteMin != null) predicats.add(cb.ge(root.get("capacite"), capaciteMin));
-if (besoinVisio != null) predicats.add(cb.equal(root.get("visioConferenceDisponible"), besoinVisio));
-
-cq.where(cb.and(predicats.toArray(new Predicate[0])));
-```
-
-### 3. Pagination Efficace des Résultats
-Contrôle du flux de pagination à l'aide de `setFirstResult(offset)` et `setMaxResults(pageSize)` générant les clauses SQL `LIMIT / OFFSET` :
-```java
-TypedQuery<SalleReunion> pageQuery = em.createQuery("SELECT s FROM SalleReunion s ORDER BY s.id", SalleReunion.class);
-pageQuery.setFirstResult(page * pageSize);
-pageQuery.setMaxResults(pageSize);
-```
+1. **Salles Disponibles** : Requête temporelle avec clause `NOT IN` sur les réservations en conflit horaire.
+2. **Criteria API** : Filtrage dynamique par capacité, étage et visio-conférence.
+3. **Pagination** : Utilisation de `setFirstResult` et `setMaxResults` pour paginer les résultats.
 
 ---
 
-## 2. Compilation et Exécution
+## 2. Résultats des Tests dans le Terminal (CMD)
+
+Exécution montrant les différentes requêtes SQL générées et le découpage paginé :
+
+![Résultat du test en CMD](docs/images/02-execution-cmd.png)
+
+---
+
+## 3. Compilation et Exécution
 
 ```bash
 mvn clean compile exec:java "-Dexec.mainClass=ma.enset.tp5.App"
